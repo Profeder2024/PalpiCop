@@ -106,13 +106,14 @@ btnAdmTrigger.addEventListener('click', () => {
     sections.adm.classList.remove('hidden');
     admPasswordInput.value = '';
     admAuthError.classList.add('hidden');
+    admAuthBox.remove('hidden');
     admAuthBox.classList.remove('hidden');
     admControlBox.classList.add('hidden');
     resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Clique no botão acima para carregar a conferência dos alunos.</p>';
 });
 
 admLoginBtn.addEventListener('click', () => {
-    if (admPasswordInput.value === SENHA_MESTRE) {
+    if (admPasswordInput.value.trim() === SENHA_MESTRE) {
         admAuthBox.classList.add('hidden');
         admControlBox.classList.remove('hidden');
         renderizarPainelAdm();
@@ -164,7 +165,7 @@ admSaveBtn.addEventListener('click', async () => {
     }
 });
 
-// --- 📊 EXCLUSIVO ADM: CARREGAR ACERTOS E DESTAQUES (GABARITOS) ---
+// --- 📊 EXCLUSIVO ADM: CARREGAR ACERTOS E DESTAQUES ---
 viewResultsBtn.addEventListener('click', async () => {
     resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-2 text-xs">Carregando acertos...</p>';
 
@@ -213,12 +214,10 @@ viewResultsBtn.addEventListener('click', async () => {
                 }
             });
 
-            // Se o aluno acertou absolutamente TODOS os jogos da rodada atual
             if (acertosContador === totalJogosRodada && totalJogosRodada > 0) {
                 alunosGabaritaram.push(emailLimpo);
             }
 
-            // Guarda o card normal para a listagem geral abaixo
             const card = document.createElement('div');
             card.className = "bg-white p-2 rounded border border-gray-200 shadow-sm text-xs mb-2";
             card.innerHTML = `
@@ -231,13 +230,10 @@ viewResultsBtn.addEventListener('click', async () => {
             listaCardsAlunos.push(card);
         });
 
-        // 🏆 SEÇÃO DE DESTAQUE: INJETA NO TOPO SE HOUVER ALGUÉM QUE GABARITOU
         if (alunosGabaritaram.length > 0) {
             const containerGabarito = document.createElement('div');
             containerGabarito.className = "bg-amber-50 border-2 border-amber-400 p-3 rounded-lg mb-4 text-center shadow-md animate-pulse";
-            
             let nomesEstudantes = alunosGabaritaram.map(email => `🥇 <b class="text-amber-900">${email}</b>`).join('<br>');
-            
             containerGabarito.innerHTML = `
                 <h5 class="text-xs font-extrabold text-amber-700 tracking-wider uppercase mb-1">🔥 MITOS DA RODADA - ACERTARAM TUDO! 🔥</h5>
                 <div class="text-xs space-y-1">${nomesEstudantes}</div>
@@ -245,7 +241,6 @@ viewResultsBtn.addEventListener('click', async () => {
             resultsContainer.appendChild(containerGabarito);
         }
 
-        // Adiciona o restante da lista de alunos logo abaixo do destaque
         listaCardsAlunos.forEach(cardHtml => resultsContainer.appendChild(cardHtml));
 
     } catch (error) {
@@ -259,7 +254,7 @@ backAdmBtn.addEventListener('click', () => {
     inicializarApp();
 });
 
-// --- CONTROLES DE ÁUDIO, LOGIN E SALVAMENTO DOS ALUNOS ---
+// --- CONTROLES DE ÁUDIO E INTERFACE ---
 musicBtn.addEventListener('click', () => {
     if (bgMusic.paused) { bgMusic.play(); atualizarBotaoMusica(false); }
     else { bgMusic.pause(); atualizarBotaoMusica(true); }
@@ -274,13 +269,17 @@ function tocarSomTecla() { soundClick.currentTime = 0; soundClick.volume = 0.4; 
 document.getElementById('btn-font-inc').addEventListener('click', () => { if (currentFontSize < 24) { currentFontSize += 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
 document.getElementById('btn-font-dec').addEventListener('click', () => { if (currentFontSize > 12) { currentFontSize -= 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
 
+// --- LOGIN DOS ALUNOS ---
 loginBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim().toLowerCase();
-    if (!email.includes('escola')) {
-        authError.innerText = "Acesso negado. Use seu e-mail da escola!";
+    
+    // Validação corrigida: Aceita qualquer variação que contenha "escola" ou o domínio completo
+    if (!email.includes('escola') && !email.includes('pr.gov.br')) {
+        authError.innerText = "Acesso negado. Use seu e-mail institucional da escola!";
         authError.classList.remove('hidden');
         return;
     }
+
     const usuarioId = email.replace(/[^a-zA-Z0-9]/g, "_");
     authError.classList.add('hidden');
     try {
@@ -293,7 +292,7 @@ loginBtn.addEventListener('click', async () => {
         userDisplay.innerText = `Estudante: ${email}`;
         renderizarJogos(docSnap.exists() ? docSnap.data() : null);
     } catch (error) {
-        authError.innerText = "Erro de conexão.";
+        authError.innerText = "Erro de conexão com o banco.";
         authError.classList.remove('hidden');
     }
 });
@@ -303,9 +302,8 @@ function renderizarJogos(palpitesExistentes) {
     const jaPalpitou = palpitesExistentes !== null;
 
     jogosDoDia.forEach(jogo => {
-        const palpiteM = jaPalpitou ? palpitesExistentes[jogo.id]?.mandante : '';
-        const palpiteV = jaPalpitou ? palindesExistentes ? palpitesExistentes[jogo.id]?.visitante : '';
-        const pV = jaPalpitou ? palpitesExistentes[jogo.id]?.visitante : '';
+        const palpiteM = jaPalpitou ? (palpitesExistentes[jogo.id]?.mandante ?? '') : '';
+        const palpiteV = jaPalpitou ? (palpitesExistentes[jogo.id]?.visitante ?? '') : '';
 
         const card = document.createElement('div');
         card.className = "flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm";
@@ -317,7 +315,7 @@ function renderizarJogos(palpitesExistentes) {
             <div class="flex items-center space-x-2 w-1/3 justify-center">
                 <input type="number" min="0" id="${jogo.id}-m" value="${palpiteM}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
                 <span class="text-gray-400 font-bold">X</span>
-                <input type="number" min="0" id="${jogo.id}-v" value="${pV}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
+                <input type="number" min="0" id="${jogo.id}-v" value="${palpiteV}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
             </div>
             <div class="flex items-center justify-start space-x-2 w-1/3 text-left">
                 <img src="https://flagcdn.com/w40/${jogo.flagV}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
