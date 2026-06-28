@@ -16,8 +16,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const jogosDoDia = [
-    { id: "jogo1", mandante: "Brasil", visitante: "França" },
-    { id: "jogo2", mandante: "Portugal", visitante: "Marrocos" }
+    { id: "jogo1", mandante: "Brasil", visitante: "Japão" },
+    { id: "jogo2", mandante: "Alemanha", visitante: "Paraguai" },
+    { id: "jogo3", mandante: "Holanda", visitante: "Marrocos" } 
 ];
 
 let usuarioAtual = null;
