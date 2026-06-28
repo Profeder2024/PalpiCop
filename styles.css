@@ -1,0 +1,137 @@
+/* Configurações Gerais e Cores da Copa 2026 */
+:root {
+    --primary-color: #1e40af; /* Azul */
+    --secondary-color: #16a34a; /* Verde */
+    --background-color: #f3f4f6; /* Cinza claro */
+    --card-background: #ffffff;
+    --text-color: #1f2937;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Cabeçalho */
+header h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+header p {
+    color: #4b5563;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Containers (Cards) de Login e App */
+.container-card {
+    background: var(--card-background);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 480px;
+    box-sizing: border-box;
+}
+
+/* Inputs de Texto e Senha */
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.2);
+}
+
+/* Botões */
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #1d4ed8;
+}
+
+.btn-success {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #15803d;
+}
+
+/* Linha de Jogo (Placar) */
+.game-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f9fafb;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.team-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.team-left { text-align: right; padding-right: 15px; }
+.team-right { text-align: left; padding-left: 15px; }
+
+/* Inputs do Placar (Gols) */
+.score-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.score-inputs input[type="number"] {
+    width: 50px;
+    height: 40px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+/* Classes Utilitárias */
+.hidden { display: none !important; }
+.error-text { color: #dc2626; font-size: 0.875rem; margin-top: 0.5rem; text-align: center; }
+.success-text { color: var(--secondary-color); font-size: 1rem; font-weight: bold; text-align: center; }
