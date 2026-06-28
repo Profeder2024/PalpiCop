@@ -6,7 +6,6 @@
     <title>Palpicop - Copa 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Sombra no título para destacar em cima do estádio */
         h1 { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); }
     </style>
 </head>
@@ -17,8 +16,10 @@
     <audio id="sound-success" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav"></audio>
 
     <div class="fixed top-4 right-4 z-50 flex items-center gap-2 bg-black/70 backdrop-blur-md p-2 rounded-lg shadow-lg border border-white/10">
-        <button id="btn-font-dec" title="Diminuir Letra" class="text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded font-bold text-xs transition">A-</button>
-        <button id="btn-font-inc" title="Aumentar Letra" class="text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded font-bold text-xs transition">A+</button>
+        <button id="btn-adm-trigger" title="Painel do Professor" class="text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded flex items-center justify-center transition">⚙️</button>
+        <div class="h-6 w-px bg-white/20 mx-1"></div>
+        <button id="btn-font-dec" class="text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded font-bold text-xs transition">A-</button>
+        <button id="btn-font-inc" class="text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded font-bold text-xs transition">A+</button>
         <div class="h-6 w-px bg-white/20 mx-1"></div>
         <button id="music-btn" class="text-white bg-white/10 hover:bg-white/20 px-2 h-8 rounded text-xs font-semibold transition">🎵 Som Desativado</button>
         <input id="volume-range" type="range" min="0" max="1" step="0.1" value="0.5" class="w-16 accent-green-500 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer">
@@ -56,8 +57,27 @@
             <h3 class="text-lg font-bold text-gray-800">📊 Gabarito e Acertos dos Alunos</h3>
             <button id="back-results-btn" class="text-xs bg-gray-500 text-white px-3 py-1.5 rounded font-bold hover:bg-gray-600 transition shadow">Voltar</button>
         </div>
-        <p class="text-xs text-gray-500 mb-4">Os pontos são calculados automaticamente com base nos placares reais cadastrados.</p>
         <div id="results-container" class="space-y-4"></div>
+    </div>
+
+    <div id="adm-section" class="bg-white/95 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-xl border border-gray-100 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <h3 class="text-lg font-bold text-blue-800">🔐 Painel de Controle do Professor</h3>
+            <button id="back-adm-btn" class="text-xs bg-gray-500 text-white px-3 py-1.5 rounded font-bold hover:bg-gray-600 transition shadow">Voltar</button>
+        </div>
+        
+        <div id="adm-auth-box">
+            <input type="password" id="adm-password-input" placeholder="Digite a Senha do Professor" class="w-full p-2 border rounded mb-3 text-center font-bold">
+            <button id="adm-login-btn" class="w-full bg-blue-700 text-white p-2 rounded font-bold text-sm">Acessar Painel</button>
+            <p id="adm-auth-error" class="text-red-600 text-xs mt-1 text-center font-bold hidden">Senha Incorreta!</p>
+        </div>
+
+        <div id="adm-control-box" class="hidden space-y-4">
+            <p class="text-xs text-amber-600 font-bold text-center">Insira abaixo os placares finais reais dos jogos de hoje:</p>
+            <div id="adm-games-list" class="space-y-3"></div>
+            <button id="adm-save-btn" class="w-full bg-green-600 text-white p-2.5 rounded font-bold text-sm hover:bg-green-700 transition">Salvar Placares Oficiais</button>
+            <p id="adm-save-status" class="text-center text-xs font-bold mt-2"></p>
+        </div>
     </div>
 
     <script type="module" src="app.js"></script>
