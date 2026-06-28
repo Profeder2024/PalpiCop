@@ -34,7 +34,7 @@ function obterDataHoje() {
 const dataHoje = obterDataHoje();
 const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-29"]; 
 
-const SENHA_MESTRE = "copa2026"; // 🔐 SENHA DO PAINEL ADM
+const SENHA_MESTRE = "C0p@2026"; // 🔐 SENHA DO PAINEL ADM
 let resultadosOficiais = {}; 
 let usuarioAtual = null;
 let currentFontSize = 16;
