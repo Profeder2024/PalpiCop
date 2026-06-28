@@ -5,18 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Palpicop - Copa 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Sombra no título para destacar em cima do estádio */
+        h1 { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); }
+    </style>
 </head>
-<body class="font-sans min-h-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-no-repeat bg-fixed" style="background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('fundo.png');">
+<body id="main-body" class="font-sans min-h-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-no-repeat bg-fixed text-base" style="background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('fundo.png');">
 
-    <header class="text-center mb-8">
-        <h1 class="text-4xl font-extrabold text-white tracking-wide drop-shadow-lg">🏆 PalpiCop</h1>
-        <p class="text-gray-200 mt-2 drop-shadow font-medium">Deixe seu palpite para os jogos da Copa do Mundo 2026</p>
+    <audio id="bg-music" loop src="Goleada.mp3"></audio>
+    <audio id="sound-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav"></audio>
+    <audio id="sound-success" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav"></audio>
+
+    <div class="fixed top-4 right-4 z-50 flex items-center gap-2 bg-black/70 backdrop-blur-md p-2 rounded-lg shadow-lg border border-white/10">
+        <button id="btn-font-dec" title="Diminuir Letra" class="text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded font-bold text-xs transition">A-</button>
+        <button id="btn-font-inc" title="Aumentar Letra" class="text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded font-bold text-xs transition">A+</button>
+        <div class="h-6 w-px bg-white/20 mx-1"></div>
+        <button id="music-btn" class="text-white bg-white/10 hover:bg-white/20 px-2 h-8 rounded text-xs font-semibold transition">🎵 Som Desativado</button>
+        <input id="volume-range" type="range" min="0" max="1" step="0.1" value="0.5" class="w-16 accent-green-500 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer">
+    </div>
+
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-extrabold text-white tracking-wide drop-shadow-lg">🏆 Palpicop</h1>
+        <p class="text-gray-200 mt-2 drop-shadow font-medium">Copa do Mundo 2026</p>
+        <div class="mt-3 inline-block bg-green-600/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md backdrop-blur-sm">
+            🔥 <span id="total-palpites-counter">0</span> palpites enviados hoje!
+        </div>
     </header>
 
     <div id="auth-section" class="bg-white/95 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-md border border-gray-100">
         <h2 class="text-xl font-bold mb-4 text-center text-gray-800">Acesse com seu e-mail da Escola</h2>
         <input type="email" id="email-input" placeholder="seu-nome@escola.pr.gov.br" class="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
-        <button id="login-btn" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition shadow-md">Entrar no PalpiCop</button>
+        <button id="login-btn" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition shadow-md mb-3">Entrar no Palpicop</button>
+        <button id="view-results-btn" class="w-full bg-gray-100 text-gray-700 p-2 rounded font-semibold text-sm hover:bg-gray-200 transition">📊 Ver Quem Acertou os Resultados</button>
         <p id="auth-error" class="text-red-600 text-sm mt-2 text-center font-medium hidden"></p>
     </div>
 
@@ -25,13 +45,19 @@
             <span id="user-display" class="text-gray-700 font-semibold text-sm"></span>
             <button id="logout-btn" class="text-xs bg-red-500 text-white px-3 py-1.5 rounded font-bold hover:bg-red-600 transition shadow">Sair</button>
         </div>
-
         <h3 class="text-lg font-bold mb-4 text-gray-800 text-center">Jogos do Dia</h3>
-        
         <div id="games-container" class="space-y-4"></div>
-
         <button id="save-palpites-btn" class="w-full mt-6 bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 transition shadow-md">Salvar Palpite Único</button>
         <p id="save-status" class="text-center mt-3 font-semibold text-sm"></p>
+    </div>
+
+    <div id="ranking-section" class="bg-white/95 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-2xl border border-gray-100 hidden">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <h3 class="text-lg font-bold text-gray-800">📊 Gabarito e Acertos dos Alunos</h3>
+            <button id="back-results-btn" class="text-xs bg-gray-500 text-white px-3 py-1.5 rounded font-bold hover:bg-gray-600 transition shadow">Voltar</button>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Os pontos são calculados automaticamente com base nos placares reais cadastrados.</p>
+        <div id="results-container" class="space-y-4"></div>
     </div>
 
     <script type="module" src="app.js"></script>
