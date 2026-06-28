@@ -34,7 +34,7 @@ function obterDataHoje() {
 const dataHoje = obterDataHoje();
 const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-29"]; 
 
-const SENHA_MESTRE = "copa2026"; // 🔐 SUA SENHA DO PAINEL ADM
+const SENHA_MESTRE = "copa2026"; // 🔐 SENHA DO PAINEL ADM
 let resultadosOficiais = {}; 
 let usuarioAtual = null;
 let currentFontSize = 16;
@@ -100,13 +100,17 @@ async function inicializarApp() {
 }
 inicializarApp();
 
-// --- ⚙️ PAINEL ADMINISTRATIVO (PROFESSOR) ---
+// --- ⚙️ ACESSAR O PAINEL ADM (BOTÃO DA ENGRENAGEM) ---
 btnAdmTrigger.addEventListener('click', () => {
+    // Esconde a tela de login e formulários
     Object.values(sections).forEach(s => s.classList.add('hidden'));
+    
+    // Mostra a seção do Administrador
     sections.adm.classList.remove('hidden');
+    
+    // Reseta as caixas internas para pedir a senha
     admPasswordInput.value = '';
     admAuthError.classList.add('hidden');
-    admAuthBox.remove('hidden');
     admAuthBox.classList.remove('hidden');
     admControlBox.classList.add('hidden');
     resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Clique no botão acima para carregar a conferência dos alunos.</p>';
@@ -165,7 +169,7 @@ admSaveBtn.addEventListener('click', async () => {
     }
 });
 
-// --- 📊 EXCLUSIVO ADM: CARREGAR ACERTOS E DESTAQUES ---
+// --- 📊 CARREGAR ACERTOS E DESTAQUES ---
 viewResultsBtn.addEventListener('click', async () => {
     resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-2 text-xs">Carregando acertos...</p>';
 
@@ -273,7 +277,6 @@ document.getElementById('btn-font-dec').addEventListener('click', () => { if (cu
 loginBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim().toLowerCase();
     
-    // Validação corrigida: Aceita qualquer variação que contenha "escola" ou o domínio completo
     if (!email.includes('escola') && !email.includes('pr.gov.br')) {
         authError.innerText = "Acesso negado. Use seu e-mail institucional da escola!";
         authError.classList.remove('hidden');
