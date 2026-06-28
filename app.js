@@ -27,7 +27,6 @@ const calendarioJogos = {
     ]
 };
 
-// Configurações Globais de Data
 function obterDataHoje() {
     const hoje = new Date();
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
@@ -35,31 +34,26 @@ function obterDataHoje() {
 const dataHoje = obterDataHoje();
 const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-29"]; 
 
-const SENHA_MESTRE = "copa2026"; // 🔐 COLOQUE SUA SENHA DO PAINEL AQUI!
+const SENHA_MESTRE = "copa2026"; // 🔐 SUA SENHA DO PAINEL ADM
 let resultadosOficiais = {}; 
 let usuarioAtual = null;
 let currentFontSize = 16;
 
 const colecaoDoDia = `palpites_${dataHoje}`;
 
-// Elementos das seções
 const sections = {
     auth: document.getElementById('auth-section'),
     app: document.getElementById('app-section'),
-    ranking: document.getElementById('ranking-section'),
     adm: document.getElementById('adm-section')
 };
 
-// Elementos HTML mapeados
+// Elementos comuns
 const emailInput = document.getElementById('email-input');
 const loginBtn = document.getElementById('login-btn');
-const viewResultsBtn = document.getElementById('view-results-btn');
-const backResultsBtn = document.getElementById('back-results-btn');
 const authError = document.getElementById('auth-error');
 const userDisplay = document.getElementById('user-display');
 const logoutBtn = document.getElementById('logout-btn');
 const gamesContainer = document.getElementById('games-container');
-const resultsContainer = document.getElementById('results-container');
 const saveBtn = document.getElementById('save-palpites-btn');
 const saveStatus = document.getElementById('save-status');
 const totalCounter = document.getElementById('total-palpites-counter');
@@ -75,8 +69,10 @@ const admControlBox = document.getElementById('adm-control-box');
 const admGamesList = document.getElementById('adm-games-list');
 const admSaveBtn = document.getElementById('adm-save-btn');
 const admSaveStatus = document.getElementById('adm-save-status');
+const viewResultsBtn = document.getElementById('view-results-btn');
+const resultsContainer = document.getElementById('results-container');
 
-// Sons e Acessibilidade
+// Áudios e Interface
 const bgMusic = document.getElementById('bg-music');
 const musicBtn = document.getElementById('music-btn');
 const volumeRange = document.getElementById('volume-range');
@@ -84,14 +80,14 @@ const soundClick = document.getElementById('sound-click');
 const soundSuccess = document.getElementById('sound-success');
 const mainBody = document.getElementById('main-body');
 
-// --- 🌐 CARREGAR INFORMAÇÕES INICIAIS DO BANCO ---
+bgMusic.volume = 0.5;
+
+// --- 🌐 INICIALIZADOR ---
 async function inicializarApp() {
     try {
-        // 1. Atualiza Contador
         const querySnapshot = await getDocs(collection(db, colecaoDoDia));
         totalCounter.innerText = querySnapshot.size;
 
-        // 2. Busca Resultados Reais salvos pelo ADM no Firebase
         const resDoc = await getDoc(doc(db, "resultados_oficiais", dataHoje));
         if (resDoc.exists()) {
             resultadosOficiais = resDoc.data();
@@ -104,7 +100,7 @@ async function inicializarApp() {
 }
 inicializarApp();
 
-// --- ⚙️ ACESSO AO PAINEL ADMINISTRATIVO (PROFESSOR) ---
+// --- ⚙️ PAINEL ADMINISTRATIVO (PROFESSOR) ---
 btnAdmTrigger.addEventListener('click', () => {
     Object.values(sections).forEach(s => s.classList.add('hidden'));
     sections.adm.classList.remove('hidden');
@@ -112,6 +108,7 @@ btnAdmTrigger.addEventListener('click', () => {
     admAuthError.classList.add('hidden');
     admAuthBox.classList.remove('hidden');
     admControlBox.classList.add('hidden');
+    resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Clique no botão acima para carregar a conferência dos alunos.</p>';
 });
 
 admLoginBtn.addEventListener('click', () => {
@@ -133,13 +130,13 @@ function renderizarPainelAdm() {
         const item = document.createElement('div');
         item.className = "flex items-center justify-between bg-gray-100 p-2 rounded border text-sm";
         item.innerHTML = `
-            <span class="font-bold text-gray-700 w-2/5 text-right">${jogo.mandante}</span>
+            <span class="font-bold text-gray-700 w-2/5 text-right text-xs">${jogo.mandante}</span>
             <div class="flex items-center space-x-1 justify-center w-1/5">
-                <input type="number" id="adm-${jogo.id}-m" value="${mVal}" class="w-10 p-1 text-center border rounded font-bold bg-white text-black">
+                <input type="number" id="adm-${jogo.id}-m" value="${mVal}" class="w-10 p-1 text-center border rounded font-bold bg-white text-black text-xs">
                 <span>x</span>
-                <input type="number" id="adm-${jogo.id}-v" value="${vVal}" class="w-10 p-1 text-center border rounded font-bold bg-white text-black">
+                <input type="number" id="adm-${jogo.id}-v" value="${vVal}" class="w-10 p-1 text-center border rounded font-bold bg-white text-black text-xs">
             </div>
-            <span class="font-bold text-gray-700 w-2/5 text-left">${jogo.visitante}</span>
+            <span class="font-bold text-gray-700 w-2/5 text-left text-xs">${jogo.visitante}</span>
         `;
         admGamesList.appendChild(item);
     });
@@ -159,34 +156,30 @@ admSaveBtn.addEventListener('click', async () => {
     try {
         await setDoc(doc(db, "resultados_oficiais", dataHoje), novosResultados);
         resultadosOficiais = novosResultados;
-        admSaveStatus.innerText = "✅ Placares salvos no Firebase com sucesso!";
-        admSaveStatus.className = "text-center text-xs font-bold mt-2 text-green-600";
+        admSaveStatus.innerText = "✅ Placares salvos com sucesso!";
+        admSaveStatus.className = "text-center text-xs font-bold mt-1 text-green-600";
     } catch (e) {
-        admSaveStatus.innerText = "❌ Erro ao salvar dados no Firebase.";
-        admSaveStatus.className = "text-center text-xs font-bold mt-2 text-red-600";
+        admSaveStatus.innerText = "❌ Erro ao salvar dados.";
+        admSaveStatus.className = "text-center text-xs font-bold mt-1 text-red-600";
     }
 });
 
-backAdmBtn.addEventListener('click', () => {
-    sections.adm.classList.add('hidden');
-    sections.auth.classList.remove('hidden');
-    inicializarApp();
-});
-
-// --- 📊 TELA DE ACERTOS DOS ALUNOS ---
+// --- 📊 EXCLUSIVO ADM: CARREGAR ACERTOS E DESTAQUES (GABARITOS) ---
 viewResultsBtn.addEventListener('click', async () => {
-    sections.auth.classList.add('hidden');
-    sections.ranking.classList.remove('hidden');
-    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-4 text-sm">Calculando acertos...</p>';
+    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-2 text-xs">Carregando acertos...</p>';
 
     try {
         const querySnapshot = await getDocs(collection(db, colecaoDoDia));
         resultsContainer.innerHTML = '';
 
         if (querySnapshot.empty) {
-            resultsContainer.innerHTML = '<p class="text-center text-gray-600 py-4 text-sm">Nenhum palpite enviado hoje.</p>';
+            resultsContainer.innerHTML = '<p class="text-center text-gray-600 py-2 text-xs">Nenhum palpite enviado hoje.</p>';
             return;
         }
+
+        const totalJogosRodada = jogosDoDia.length;
+        let alunosGabaritaram = [];
+        let listaCardsAlunos = [];
 
         querySnapshot.forEach((docSnap) => {
             const dadosAlun = docSnap.data();
@@ -204,45 +197,69 @@ viewResultsBtn.addEventListener('click', async () => {
                     const acertou = (palpiteM === realM && palpiteV === realV);
                     if (acertou) acertosContador++;
                     detalheLinhas += `
-                        <div class="text-xs flex justify-between border-b border-gray-100 py-1">
-                            <span class="text-gray-600">${jogo.mandante} x ${jogo.visitante}</span>
-                            <span class="font-mono">Seu Palpite: <b>${palpiteM}x${palpiteV}</b> | Real: <b>${realM}x${realV}</b></span>
-                            <span class="font-bold ${acertou ? 'text-green-600' : 'text-gray-400'}">${acertou ? '✅ +1' : '❌ 0'}</span>
+                        <div class="text-[10px] flex justify-between border-b border-gray-100 py-0.5">
+                            <span class="text-gray-500">${jogo.mandante} x ${jogo.visitante}</span>
+                            <span class="font-mono">P: <b>${palpiteM}x${palpiteV}</b> | R: <b>${realM}x${realV}</b></span>
+                            <span class="font-bold ${acertou ? 'text-green-600' : 'text-gray-400'}">${acertou ? '✅' : '❌'}</span>
                         </div>
                     `;
                 } else {
                     detalheLinhas += `
-                        <div class="text-xs flex justify-between border-b border-gray-100 py-1 text-gray-400">
+                        <div class="text-[10px] flex justify-between border-b border-gray-100 py-0.5 text-gray-400">
                             <span>${jogo.mandante} x ${jogo.visitante}</span>
-                            <span>Aguardando fim do jogo real (Seu palpite: ${palpiteM}x${palpiteV})</span>
+                            <span>Aguardando jogo (Palpite: ${palpiteM}x${palpiteV})</span>
                         </div>
                     `;
                 }
             });
 
+            // Se o aluno acertou absolutamente TODOS os jogos da rodada atual
+            if (acertosContador === totalJogosRodada && totalJogosRodada > 0) {
+                alunosGabaritaram.push(emailLimpo);
+            }
+
+            // Guarda o card normal para a listagem geral abaixo
             const card = document.createElement('div');
-            card.className = "bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm";
+            card.className = "bg-white p-2 rounded border border-gray-200 shadow-sm text-xs mb-2";
             card.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <span class="font-bold text-sm text-blue-700">${emailLimpo}</span>
-                    <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">🎯 ${acertosContador} acertos</span>
+                <div class="flex justify-between items-center mb-1 bg-gray-50 p-1 rounded">
+                    <span class="font-bold text-blue-800 text-xs">${emailLimpo}</span>
+                    <span class="bg-green-100 text-green-800 text-[10px] font-bold px-1.5 rounded-full">🎯 ${acertosContador} acertos</span>
                 </div>
-                <div class="space-y-1 bg-white p-2 rounded border border-gray-100">${detalheLinhas}</div>
+                <div class="space-y-0.5 p-1">${detalheLinhas}</div>
             `;
-            resultsContainer.appendChild(card);
+            listaCardsAlunos.push(card);
         });
+
+        // 🏆 SEÇÃO DE DESTAQUE: INJETA NO TOPO SE HOUVER ALGUÉM QUE GABARITOU
+        if (alunosGabaritaram.length > 0) {
+            const containerGabarito = document.createElement('div');
+            containerGabarito.className = "bg-amber-50 border-2 border-amber-400 p-3 rounded-lg mb-4 text-center shadow-md animate-pulse";
+            
+            let nomesEstudantes = alunosGabaritaram.map(email => `🥇 <b class="text-amber-900">${email}</b>`).join('<br>');
+            
+            containerGabarito.innerHTML = `
+                <h5 class="text-xs font-extrabold text-amber-700 tracking-wider uppercase mb-1">🔥 MITOS DA RODADA - ACERTARAM TUDO! 🔥</h5>
+                <div class="text-xs space-y-1">${nomesEstudantes}</div>
+            `;
+            resultsContainer.appendChild(containerGabarito);
+        }
+
+        // Adiciona o restante da lista de alunos logo abaixo do destaque
+        listaCardsAlunos.forEach(cardHtml => resultsContainer.appendChild(cardHtml));
+
     } catch (error) {
-        resultsContainer.innerHTML = '<p class="text-center text-red-600 text-sm">Erro ao processar ranking.</p>';
+        resultsContainer.innerHTML = '<p class="text-center text-red-600 text-xs">Erro ao processar ranking.</p>';
     }
 });
 
-backResultsBtn.addEventListener('click', () => {
-    sections.ranking.classList.add('hidden');
+backAdmBtn.addEventListener('click', () => {
+    sections.adm.classList.add('hidden');
     sections.auth.classList.remove('hidden');
     inicializarApp();
 });
 
-// --- ÁUDIOS, LOGIN E SALVAMENTO ---
+// --- CONTROLES DE ÁUDIO, LOGIN E SALVAMENTO DOS ALUNOS ---
 musicBtn.addEventListener('click', () => {
     if (bgMusic.paused) { bgMusic.play(); atualizarBotaoMusica(false); }
     else { bgMusic.pause(); atualizarBotaoMusica(true); }
@@ -287,7 +304,8 @@ function renderizarJogos(palpitesExistentes) {
 
     jogosDoDia.forEach(jogo => {
         const palpiteM = jaPalpitou ? palpitesExistentes[jogo.id]?.mandante : '';
-        const palpiteV = jaPalpitou ? palpitesExistentes[jogo.id]?.visitante : '';
+        const palpiteV = jaPalpitou ? palindesExistentes ? palpitesExistentes[jogo.id]?.visitante : '';
+        const pV = jaPalpitou ? palpitesExistentes[jogo.id]?.visitante : '';
 
         const card = document.createElement('div');
         card.className = "flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm";
@@ -299,7 +317,7 @@ function renderizarJogos(palpitesExistentes) {
             <div class="flex items-center space-x-2 w-1/3 justify-center">
                 <input type="number" min="0" id="${jogo.id}-m" value="${palpiteM}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
                 <span class="text-gray-400 font-bold">X</span>
-                <input type="number" min="0" id="${jogo.id}-v" value="${palpiteV}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
+                <input type="number" min="0" id="${jogo.id}-v" value="${pV}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
             </div>
             <div class="flex items-center justify-start space-x-2 w-1/3 text-left">
                 <img src="https://flagcdn.com/w40/${jogo.flagV}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
