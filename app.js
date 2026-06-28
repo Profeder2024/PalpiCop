@@ -14,8 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🗓️ CALENDÁRIO COMPLETO POR DIAS
-// O formato da data deve ser "AAAA-MM-DD" para o sistema reconhecer o dia atual.
+// 🗓️ CALENDÁRIO DIÁRIO COMPLETO
 const calendarioJogos = {
     "2026-06-29": [
         { id: "29_jogo1", mandante: "Brasil", flagM: "br", visitante: "Japão", flagV: "jp" },
@@ -25,44 +24,33 @@ const calendarioJogos = {
     "2026-06-30": [
         { id: "30_jogo1", mandante: "Argentina", flagM: "ar", visitante: "França", flagV: "fr" },
         { id: "30_jogo2", mandante: "Espanha", flagM: "es", visitante: "Nigéria", flagV: "ng" }
-    ],
-    "2026-07-01": [
-        { id: "01_jogo1", mandante: "Portugal", flagM: "pt", visitante: "México", flagV: "mx" },
-        { id: "01_jogo2", mandante: "Inglaterra", flagM: "gb-eng", visitante: "Coreia do Sul", flagV: "kr" }
     ]
-    // 💡 Pode continuar a adicionar os próximos dias aqui seguindo a mesma estrutura!
 };
 
-// 📝 GABARITO DE RESULTADOS REAIS (Atualize aqui quando os jogos terminarem)
-const resultadosOficiais = {
-    "29_jogo1": { mandante: 3, visitante: 1 },
-    "29_jogo2": { mandante: 2, visitante: 0 },
-    "29_jogo3": { mandante: 1, visitante: 2 },
-    
-    "30_jogo1": { mandante: null, visitante: null }, // Mude após o fim do jogo
-    "30_jogo2": { mandante: null, visitante: null }
-};
-
-// --- FUNÇÃO PARA PEGAR A DATA DE HOJE NO BRASIL (FUSO HORÁRIO LOCAL) ---
+// Configurações Globais de Data
 function obterDataHoje() {
     const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoje.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
+    return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
 }
-
 const dataHoje = obterDataHoje();
-// Procura os jogos de hoje. Se não houver, pega o dia 29 como padrão para testes.
 const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-29"]; 
 
+const SENHA_MESTRE = "copa2026"; // 🔐 COLOQUE SUA SENHA DO PAINEL AQUI!
+let resultadosOficiais = {}; 
 let usuarioAtual = null;
 let currentFontSize = 16;
 
-// Elementos HTML
-const authSection = document.getElementById('auth-section');
-const appSection = document.getElementById('app-section');
-const rankingSection = document.getElementById('ranking-section');
+const colecaoDoDia = `palpites_${dataHoje}`;
+
+// Elementos das seções
+const sections = {
+    auth: document.getElementById('auth-section'),
+    app: document.getElementById('app-section'),
+    ranking: document.getElementById('ranking-section'),
+    adm: document.getElementById('adm-section')
+};
+
+// Elementos HTML mapeados
 const emailInput = document.getElementById('email-input');
 const loginBtn = document.getElementById('login-btn');
 const viewResultsBtn = document.getElementById('view-results-btn');
@@ -76,71 +64,149 @@ const saveBtn = document.getElementById('save-palpites-btn');
 const saveStatus = document.getElementById('save-status');
 const totalCounter = document.getElementById('total-palpites-counter');
 
-// Áudios e Acessibilidade
+// Elementos ADM
+const btnAdmTrigger = document.getElementById('btn-adm-trigger');
+const backAdmBtn = document.getElementById('back-adm-btn');
+const admPasswordInput = document.getElementById('adm-password-input');
+const admLoginBtn = document.getElementById('adm-login-btn');
+const admAuthError = document.getElementById('adm-auth-error');
+const admAuthBox = document.getElementById('adm-auth-box');
+const admControlBox = document.getElementById('adm-control-box');
+const admGamesList = document.getElementById('adm-games-list');
+const admSaveBtn = document.getElementById('adm-save-btn');
+const admSaveStatus = document.getElementById('adm-save-status');
+
+// Sons e Acessibilidade
 const bgMusic = document.getElementById('bg-music');
 const musicBtn = document.getElementById('music-btn');
 const volumeRange = document.getElementById('volume-range');
 const soundClick = document.getElementById('sound-click');
 const soundSuccess = document.getElementById('sound-success');
 const mainBody = document.getElementById('main-body');
-const btnFontInc = document.getElementById('btn-font-inc');
-const btnFontDec = document.getElementById('btn-font-dec');
 
-bgMusic.volume = 0.5;
-
-// Identificador único da coleção do banco para não misturar os dias
-// Cada dia terá sua própria tabela de palpites: "palpites_2026-06-29", etc.
-const colecaoDoDia = `palpites_${dataHoje}`;
-
-// --- CONTADOR DE PALPITES ---
-async function atualizarContadorTotal() {
+// --- 🌐 CARREGAR INFORMAÇÕES INICIAIS DO BANCO ---
+async function inicializarApp() {
     try {
+        // 1. Atualiza Contador
         const querySnapshot = await getDocs(collection(db, colecaoDoDia));
         totalCounter.innerText = querySnapshot.size;
+
+        // 2. Busca Resultados Reais salvos pelo ADM no Firebase
+        const resDoc = await getDoc(doc(db, "resultados_oficiais", dataHoje));
+        if (resDoc.exists()) {
+            resultadosOficiais = resDoc.data();
+        } else {
+            jogosDoDia.forEach(j => { resultadosOficiais[j.id] = { mandante: null, visitante: null }; });
+        }
     } catch (e) {
         totalCounter.innerText = "0";
     }
 }
-atualizarContadorTotal();
+inicializarApp();
 
-// --- SISTEMA DE VERIFICAÇÃO DE ACERTOS (AUDITORIA) ---
+// --- ⚙️ ACESSO AO PAINEL ADMINISTRATIVO (PROFESSOR) ---
+btnAdmTrigger.addEventListener('click', () => {
+    Object.values(sections).forEach(s => s.classList.add('hidden'));
+    sections.adm.classList.remove('hidden');
+    admPasswordInput.value = '';
+    admAuthError.classList.add('hidden');
+    admAuthBox.classList.remove('hidden');
+    admControlBox.classList.add('hidden');
+});
+
+admLoginBtn.addEventListener('click', () => {
+    if (admPasswordInput.value === SENHA_MESTRE) {
+        admAuthBox.classList.add('hidden');
+        admControlBox.classList.remove('hidden');
+        renderizarPainelAdm();
+    } else {
+        admAuthError.classList.remove('hidden');
+    }
+});
+
+function renderizarPainelAdm() {
+    admGamesList.innerHTML = '';
+    jogosDoDia.forEach(jogo => {
+        const mVal = resultadosOficiais[jogo.id]?.mandante ?? '';
+        const vVal = resultadosOficiais[jogo.id]?.visitante ?? '';
+        
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between bg-gray-100 p-2 rounded border text-sm";
+        item.innerHTML = `
+            <span class="font-bold text-gray-700 w-2/5 text-right">${jogo.mandante}</span>
+            <div class="flex items-center space-x-1 justify-center w-1/5">
+                <input type="number" id="adm-${jogo.id}-m" value="${mVal}" class="w-10 p-1 text-center border rounded font-bold bg-white text-black">
+                <span>x</span>
+                <input type="number" id="adm-${jogo.id}-v" value="${vVal}" class="w-10 p-1 text-center border rounded font-bold bg-white text-black">
+            </div>
+            <span class="font-bold text-gray-700 w-2/5 text-left">${jogo.visitante}</span>
+        `;
+        admGamesList.appendChild(item);
+    });
+}
+
+admSaveBtn.addEventListener('click', async () => {
+    const novosResultados = {};
+    jogosDoDia.forEach(jogo => {
+        const mVal = document.getElementById(`adm-${jogo.id}-m`).value;
+        const vVal = document.getElementById(`adm-${jogo.id}-v`).value;
+        novosResultados[jogo.id] = {
+            mandante: mVal !== "" ? parseInt(mVal) : null,
+            visitante: vVal !== "" ? parseInt(vVal) : null
+        };
+    });
+
+    try {
+        await setDoc(doc(db, "resultados_oficiais", dataHoje), novosResultados);
+        resultadosOficiais = novosResultados;
+        admSaveStatus.innerText = "✅ Placares salvos no Firebase com sucesso!";
+        admSaveStatus.className = "text-center text-xs font-bold mt-2 text-green-600";
+    } catch (e) {
+        admSaveStatus.innerText = "❌ Erro ao salvar dados no Firebase.";
+        admSaveStatus.className = "text-center text-xs font-bold mt-2 text-red-600";
+    }
+});
+
+backAdmBtn.addEventListener('click', () => {
+    sections.adm.classList.add('hidden');
+    sections.auth.classList.remove('hidden');
+    inicializarApp();
+});
+
+// --- 📊 TELA DE ACERTOS DOS ALUNOS ---
 viewResultsBtn.addEventListener('click', async () => {
-    authSection.classList.add('hidden');
-    rankingSection.classList.remove('hidden');
-    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-4">A calcular acertos...</p>';
+    sections.auth.classList.add('hidden');
+    sections.ranking.classList.remove('hidden');
+    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-4 text-sm">Calculando acertos...</p>';
 
     try {
         const querySnapshot = await getDocs(collection(db, colecaoDoDia));
         resultsContainer.innerHTML = '';
 
         if (querySnapshot.empty) {
-            resultsContainer.innerHTML = '<p class="text-center text-gray-600 py-4">Nenhum palpite enviado hoje.</p>';
+            resultsContainer.innerHTML = '<p class="text-center text-gray-600 py-4 text-sm">Nenhum palpite enviado hoje.</p>';
             return;
         }
 
         querySnapshot.forEach((docSnap) => {
             const dadosAlun = docSnap.data();
             const emailLimpo = docSnap.id.replace(/_/g, "."); 
-            
             let acertosContador = 0;
             let detalheLinhas = '';
 
             jogosDoDia.forEach(jogo => {
                 const palpiteM = dadosAlun[jogo.id]?.mandante;
                 const palpiteV = dadosAlun[jogo.id]?.visitante;
-                
-                const resultado = resultadosOficiais[jogo.id];
-                const realM = resultado ? resultado.mandante : null;
-                const realV = resultado ? resultado.visitante : null;
+                const realM = resultadosOficiais[jogo.id]?.mandante;
+                const realV = resultadosOficiais[jogo.id]?.visitante;
 
-                if (realM !== null && realV !== null) {
+                if (realM !== null && realM !== undefined && realV !== null && realV !== undefined) {
                     const acertou = (palpiteM === realM && palpiteV === realV);
                     if (acertou) acertosContador++;
-                    
                     detalheLinhas += `
                         <div class="text-xs flex justify-between border-b border-gray-100 py-1">
                             <span class="text-gray-600">${jogo.mandante} x ${jogo.visitante}</span>
-                            <span class="font-mono">Palpite: <b>${palpiteM}x${palpiteV}</b> | Real: <b>${realM}x${realV}</b></span>
+                            <span class="font-mono">Seu Palpite: <b>${palpiteM}x${palpiteV}</b> | Real: <b>${realM}x${realV}</b></span>
                             <span class="font-bold ${acertou ? 'text-green-600' : 'text-gray-400'}">${acertou ? '✅ +1' : '❌ 0'}</span>
                         </div>
                     `;
@@ -148,58 +214,49 @@ viewResultsBtn.addEventListener('click', async () => {
                     detalheLinhas += `
                         <div class="text-xs flex justify-between border-b border-gray-100 py-1 text-gray-400">
                             <span>${jogo.mandante} x ${jogo.visitante}</span>
-                            <span>Aguardando fim do jogo (Seu palpite: ${palpiteM}x${palpiteV})</span>
+                            <span>Aguardando fim do jogo real (Seu palpite: ${palpiteM}x${palpiteV})</span>
                         </div>
                     `;
                 }
             });
 
-            const cardAlun = document.createElement('div');
-            cardAlun.className = "bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm mb-3";
-            cardAlun.innerHTML = `
+            const card = document.createElement('div');
+            card.className = "bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm";
+            card.innerHTML = `
                 <div class="flex justify-between items-center mb-2">
                     <span class="font-bold text-sm text-blue-700">${emailLimpo}</span>
                     <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">🎯 ${acertosContador} acertos</span>
                 </div>
                 <div class="space-y-1 bg-white p-2 rounded border border-gray-100">${detalheLinhas}</div>
             `;
-            resultsContainer.appendChild(cardAlun);
+            resultsContainer.appendChild(card);
         });
-
     } catch (error) {
-        resultsContainer.innerHTML = '<p class="text-center text-red-600">Erro ao carregar dados.</p>';
+        resultsContainer.innerHTML = '<p class="text-center text-red-600 text-sm">Erro ao processar ranking.</p>';
     }
 });
 
 backResultsBtn.addEventListener('click', () => {
-    rankingSection.classList.add('hidden');
-    authSection.classList.remove('hidden');
-    atualizarContadorTotal();
+    sections.ranking.classList.add('hidden');
+    sections.auth.classList.remove('hidden');
+    inicializarApp();
 });
 
-// --- ÁUDIO E ACESSIBILIDADE ---
+// --- ÁUDIOS, LOGIN E SALVAMENTO ---
 musicBtn.addEventListener('click', () => {
     if (bgMusic.paused) { bgMusic.play(); atualizarBotaoMusica(false); }
     else { bgMusic.pause(); atualizarBotaoMusica(true); }
 });
-volumeRange.addEventListener('input', (e) => {
-    bgMusic.volume = e.target.value;
-    atualizarBotaoMusica(bgMusic.paused);
-});
+volumeRange.addEventListener('input', (e) => { bgMusic.volume = e.target.value; atualizarBotaoMusica(bgMusic.paused); });
 function atualizarBotaoMusica(isMuted) {
-    if (isMuted) {
-        musicBtn.innerHTML = "🔇 Som Mutado";
-        musicBtn.className = "text-white bg-red-600/80 px-2 h-8 rounded text-xs font-semibold transition";
-    } else {
-        musicBtn.innerHTML = "🎵 Som Ativo";
-        musicBtn.className = "text-white bg-green-600/80 px-2 h-8 rounded text-xs font-semibold transition";
-    }
+    if (isMuted) { musicBtn.innerHTML = "🔇 Som Mutado"; musicBtn.className = "text-white bg-red-600/80 px-2 h-8 rounded text-xs font-semibold transition"; }
+    else { musicBtn.innerHTML = "🎵 Som Ativo"; musicBtn.className = "text-white bg-green-600/80 px-2 h-8 rounded text-xs font-semibold transition"; }
 }
 function tocarSomTecla() { soundClick.currentTime = 0; soundClick.volume = 0.4; soundClick.play().catch(e => {}); }
-btnFontInc.addEventListener('click', () => { if (currentFontSize < 24) { currentFontSize += 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
-btnFontDec.addEventListener('click', () => { if (currentFontSize > 12) { currentFontSize -= 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
 
-// --- LOGIN ---
+document.getElementById('btn-font-inc').addEventListener('click', () => { if (currentFontSize < 24) { currentFontSize += 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
+document.getElementById('btn-font-dec').addEventListener('click', () => { if (currentFontSize > 12) { currentFontSize -= 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
+
 loginBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim().toLowerCase();
     if (!email.includes('escola')) {
@@ -214,17 +271,16 @@ loginBtn.addEventListener('click', async () => {
         const docRef = doc(db, colecaoDoDia, usuarioId);
         const docSnap = await getDoc(docRef);
         usuarioAtual = usuarioId;
-        authSection.classList.add('hidden');
-        appSection.classList.remove('hidden');
+        sections.auth.classList.add('hidden');
+        sections.app.classList.remove('hidden');
         userDisplay.innerText = `Estudante: ${email}`;
         renderizarJogos(docSnap.exists() ? docSnap.data() : null);
     } catch (error) {
-        authError.innerText = "Erro ao conectar com o banco.";
+        authError.innerText = "Erro de conexão.";
         authError.classList.remove('hidden');
     }
 });
 
-// --- RENDERIZAR JOGOS ---
 function renderizarJogos(palpitesExistentes) {
     gamesContainer.innerHTML = '';
     const jaPalpitou = palpitesExistentes !== null;
@@ -247,7 +303,7 @@ function renderizarJogos(palpitesExistentes) {
             </div>
             <div class="flex items-center justify-start space-x-2 w-1/3 text-left">
                 <img src="https://flagcdn.com/w40/${jogo.flagV}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
-                <span class="font-bold text-gray-700">${jogo.visitor || jogo.visitante}</span>
+                <span class="font-bold text-gray-700">${jogo.visitante}</span>
             </div>
         `;
         gamesContainer.appendChild(card);
@@ -265,7 +321,6 @@ function renderizarJogos(palpitesExistentes) {
     }
 }
 
-// --- SALVAR ---
 saveBtn.addEventListener('click', async () => {
     if (!usuarioAtual) return;
     const docRef = doc(db, colecaoDoDia, usuarioAtual);
@@ -296,5 +351,7 @@ saveBtn.addEventListener('click', async () => {
 
 logoutBtn.addEventListener('click', () => {
     usuarioAtual = null; emailInput.value = ""; bgMusic.pause(); atualizarBotaoMusica(true);
-    appSection.classList.add('hidden'); authSection.classList.remove('hidden'); atualizarContadorTotal();
+    Object.values(sections).forEach(s => s.classList.add('hidden'));
+    sections.auth.classList.remove('hidden');
+    inicializarApp();
 });
