@@ -14,20 +14,47 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🏆 Jogos do Dia
-const jogosDoDia = [
-    { id: "jogo1", mandante: "Brasil", flagM: "br", visitante: "Japão", flagV: "jp" },
-    { id: "jogo2", mandante: "Alemanha", flagM: "de", visitante: "Paraguai", flagV: "py" },
-    { id: "jogo3", mandante: "Holanda", flagM: "nl", visitante: "Marrocos", flagV: "ma" }
-];
-
-// 📝 PLACAR REAL DOS JOGOS (Modifique aqui quando os jogos terminarem para calcular os acertos!)
-// Coloque o número do placar final. Se o jogo não aconteceu, pode deixar como está.
-const resultadosOficiais = {
-    jogo1: { mandante: 3, visitante: 1 }, // Exemplo: Brasil 3 x 1 Japão
-    jogo2: { mandante: 2, visitante: 0 }, // Exemplo: Alemanha 2 x 0 Paraguai
-    jogo3: { mandante: 1, visitante: 2 }  // Exemplo: Holanda 1 x 2 Marrocos
+// 🗓️ CALENDÁRIO COMPLETO POR DIAS
+// O formato da data deve ser "AAAA-MM-DD" para o sistema reconhecer o dia atual.
+const calendarioJogos = {
+    "2026-06-29": [
+        { id: "29_jogo1", mandante: "Brasil", flagM: "br", visitante: "Japão", flagV: "jp" },
+        { id: "29_jogo2", mandante: "Alemanha", flagM: "de", visitante: "Paraguai", flagV: "py" },
+        { id: "29_jogo3", mandante: "Holanda", flagM: "nl", visitante: "Marrocos", flagV: "ma" }
+    ],
+    "2026-06-30": [
+        { id: "30_jogo1", mandante: "Argentina", flagM: "ar", visitante: "França", flagV: "fr" },
+        { id: "30_jogo2", mandante: "Espanha", flagM: "es", visitante: "Nigéria", flagV: "ng" }
+    ],
+    "2026-07-01": [
+        { id: "01_jogo1", mandante: "Portugal", flagM: "pt", visitante: "México", flagV: "mx" },
+        { id: "01_jogo2", mandante: "Inglaterra", flagM: "gb-eng", visitante: "Coreia do Sul", flagV: "kr" }
+    ]
+    // 💡 Pode continuar a adicionar os próximos dias aqui seguindo a mesma estrutura!
 };
+
+// 📝 GABARITO DE RESULTADOS REAIS (Atualize aqui quando os jogos terminarem)
+const resultadosOficiais = {
+    "29_jogo1": { mandante: 3, visitante: 1 },
+    "29_jogo2": { mandante: 2, visitante: 0 },
+    "29_jogo3": { mandante: 1, visitante: 2 },
+    
+    "30_jogo1": { mandante: null, visitante: null }, // Mude após o fim do jogo
+    "30_jogo2": { mandante: null, visitante: null }
+};
+
+// --- FUNÇÃO PARA PEGAR A DATA DE HOJE NO BRASIL (FUSO HORÁRIO LOCAL) ---
+function obterDataHoje() {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+}
+
+const dataHoje = obterDataHoje();
+// Procura os jogos de hoje. Se não houver, pega o dia 29 como padrão para testes.
+const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-29"]; 
 
 let usuarioAtual = null;
 let currentFontSize = 16;
@@ -61,35 +88,38 @@ const btnFontDec = document.getElementById('btn-font-dec');
 
 bgMusic.volume = 0.5;
 
-// --- 📈 CONTADOR DE PALPITES NA TELA INICIAL ---
+// Identificador único da coleção do banco para não misturar os dias
+// Cada dia terá sua própria tabela de palpites: "palpites_2026-06-29", etc.
+const colecaoDoDia = `palpites_${dataHoje}`;
+
+// --- CONTADOR DE PALPITES ---
 async function atualizarContadorTotal() {
     try {
-        const querySnapshot = await getDocs(collection(db, "palpites"));
+        const querySnapshot = await getDocs(collection(db, colecaoDoDia));
         totalCounter.innerText = querySnapshot.size;
     } catch (e) {
-        console.error("Erro ao buscar total de palpites:", e);
+        totalCounter.innerText = "0";
     }
 }
-atualizarContadorTotal(); // Roda assim que abre o site
+atualizarContadorTotal();
 
-// --- 📊 SISTEMA DE VERIFICAÇÃO DE ACERTOS (AUDITORIA) ---
+// --- SISTEMA DE VERIFICAÇÃO DE ACERTOS (AUDITORIA) ---
 viewResultsBtn.addEventListener('click', async () => {
     authSection.classList.add('hidden');
     rankingSection.classList.remove('hidden');
-    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-4">Carregando lista de acertos...</p>';
+    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-4">A calcular acertos...</p>';
 
     try {
-        const querySnapshot = await getDocs(collection(db, "palpites"));
+        const querySnapshot = await getDocs(collection(db, colecaoDoDia));
         resultsContainer.innerHTML = '';
 
         if (querySnapshot.empty) {
-            resultsContainer.innerHTML = '<p class="text-center text-gray-600">Nenhum palpite enviado ainda.</p>';
+            resultsContainer.innerHTML = '<p class="text-center text-gray-600 py-4">Nenhum palpite enviado hoje.</p>';
             return;
         }
 
         querySnapshot.forEach((docSnap) => {
             const dadosAlun = docSnap.data();
-            // Recupera o e-mail real trocando os "_" de volta
             const emailLimpo = docSnap.id.replace(/_/g, "."); 
             
             let acertosContador = 0;
@@ -98,24 +128,34 @@ viewResultsBtn.addEventListener('click', async () => {
             jogosDoDia.forEach(jogo => {
                 const palpiteM = dadosAlun[jogo.id]?.mandante;
                 const palpiteV = dadosAlun[jogo.id]?.visitante;
-                const realM = resultadosOficiais[jogo.id].mandante;
-                const realV = resultadosOficiais[jogo.id].visitante;
+                
+                const resultado = resultadosOficiais[jogo.id];
+                const realM = resultado ? resultado.mandante : null;
+                const realV = resultado ? resultado.visitante : null;
 
-                // Verifica se acertou o placar em cheio
-                const acertou = (palpiteM === realM && palpiteV === realV);
-                if (acertou) acertosContador++;
-
-                detalheLinhas += `
-                    <div class="text-xs flex justify-between border-b border-gray-100 py-1">
-                        <span class="text-gray-600">${jogo.mandante} x ${jogo.visitante}</span>
-                        <span class="font-mono">Palpite: <b>${palpiteM}x${palpiteV}</b> | Real: <b>${realM}x${realV}</b></span>
-                        <span>${acertou ? '✅ +1 Ponto' : '❌ 0 pts'}</span>
-                    </div>
-                `;
+                if (realM !== null && realV !== null) {
+                    const acertou = (palpiteM === realM && palpiteV === realV);
+                    if (acertou) acertosContador++;
+                    
+                    detalheLinhas += `
+                        <div class="text-xs flex justify-between border-b border-gray-100 py-1">
+                            <span class="text-gray-600">${jogo.mandante} x ${jogo.visitante}</span>
+                            <span class="font-mono">Palpite: <b>${palpiteM}x${palpiteV}</b> | Real: <b>${realM}x${realV}</b></span>
+                            <span class="font-bold ${acertou ? 'text-green-600' : 'text-gray-400'}">${acertou ? '✅ +1' : '❌ 0'}</span>
+                        </div>
+                    `;
+                } else {
+                    detalheLinhas += `
+                        <div class="text-xs flex justify-between border-b border-gray-100 py-1 text-gray-400">
+                            <span>${jogo.mandante} x ${jogo.visitante}</span>
+                            <span>Aguardando fim do jogo (Seu palpite: ${palpiteM}x${palpiteV})</span>
+                        </div>
+                    `;
+                }
             });
 
             const cardAlun = document.createElement('div');
-            cardAlun.className = "bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm";
+            cardAlun.className = "bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm mb-3";
             cardAlun.innerHTML = `
                 <div class="flex justify-between items-center mb-2">
                     <span class="font-bold text-sm text-blue-700">${emailLimpo}</span>
@@ -127,7 +167,7 @@ viewResultsBtn.addEventListener('click', async () => {
         });
 
     } catch (error) {
-        resultsContainer.innerHTML = '<p class="text-center text-red-600">Erro ao carregar dados do banco.</p>';
+        resultsContainer.innerHTML = '<p class="text-center text-red-600">Erro ao carregar dados.</p>';
     }
 });
 
@@ -171,7 +211,7 @@ loginBtn.addEventListener('click', async () => {
     authError.classList.add('hidden');
     try {
         bgMusic.play().then(() => atualizarBotaoMusica(false)).catch(e => {});
-        const docRef = doc(db, "palpites", usuarioId);
+        const docRef = doc(db, colecaoDoDia, usuarioId);
         const docSnap = await getDoc(docRef);
         usuarioAtual = usuarioId;
         authSection.classList.add('hidden');
@@ -207,7 +247,7 @@ function renderizarJogos(palpitesExistentes) {
             </div>
             <div class="flex items-center justify-start space-x-2 w-1/3 text-left">
                 <img src="https://flagcdn.com/w40/${jogo.flagV}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
-                <span class="font-bold text-gray-700">${jogo.visitante}</span>
+                <span class="font-bold text-gray-700">${jogo.visitor || jogo.visitante}</span>
             </div>
         `;
         gamesContainer.appendChild(card);
@@ -217,7 +257,7 @@ function renderizarJogos(palpitesExistentes) {
 
     if (jaPalpitou) {
         saveBtn.classList.add('hidden');
-        saveStatus.innerText = "🔒 Palpite único enviado!";
+        saveStatus.innerText = "🔒 Palpite único enviado para a rodada de hoje!";
         saveStatus.className = "text-center mt-3 font-semibold text-amber-600";
     } else {
         saveBtn.classList.remove('hidden');
@@ -228,7 +268,7 @@ function renderizarJogos(palpitesExistentes) {
 // --- SALVAR ---
 saveBtn.addEventListener('click', async () => {
     if (!usuarioAtual) return;
-    const docRef = doc(db, "palpites", usuarioAtual);
+    const docRef = doc(db, colecaoDoDia, usuarioAtual);
     const palpitesParaSalvar = {};
     let preencheuTudo = true;
 
