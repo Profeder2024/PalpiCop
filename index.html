@@ -6,7 +6,6 @@
     <title>Palpicop - Copa 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Sombra no título para destacar bem em cima do estádio */
         h1 { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); }
     </style>
 </head>
@@ -34,7 +33,7 @@
         <h1 class="text-4xl font-extrabold text-white tracking-wide drop-shadow-lg">🏆 Palpicop</h1>
         <p class="text-gray-200 mt-2 drop-shadow font-medium">Copa do Mundo 2026</p>
         <div class="mt-3 inline-block bg-green-600/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md backdrop-blur-sm">
-            🔥 <span id="total-palpites-counter">0</span> palpites enviados hoje!
+            🔥 <span id="total-palpites-counter">0</span> palpites enviados na rodada ativa!
         </div>
     </header>
 
@@ -46,11 +45,17 @@
     </div>
 
     <div id="app-section" class="bg-white/95 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-xl w-full max-w-2xl border border-gray-100 hidden">
-        <div class="flex justify-between items-center mb-6 border-b pb-4">
+        <div class="flex justify-between items-center mb-4 border-b pb-4">
             <span id="user-display" class="text-gray-700 font-semibold text-xs sm:text-sm truncate mr-2"></span>
             <button id="logout-btn" class="text-xs bg-red-500 text-white px-2.5 py-1.5 rounded font-bold hover:bg-red-600 transition shadow shrink-0">Sair</button>
         </div>
-        <h3 class="text-base sm:text-lg font-bold mb-4 text-gray-800 text-center">Jogos do Dia</h3>
+        
+        <div class="mb-4 flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-200">
+            <label for="user-date-select" class="text-xs font-bold text-blue-800">📅 Consultar Rodada:</label>
+            <select id="user-date-select" class="text-xs font-bold p-1.5 rounded border bg-white text-gray-700 focus:outline-none"></select>
+        </div>
+
+        <h3 class="text-base sm:text-lg font-bold mb-4 text-gray-800 text-center">Jogos da Rodada</h3>
         <div id="games-container" class="space-y-4"></div>
         <button id="save-palpites-btn" class="w-full mt-6 bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 transition shadow-md text-sm">Salvar Palpite Único</button>
         <p id="save-status" class="text-center mt-3 font-semibold text-sm"></p>
@@ -69,8 +74,14 @@
         </div>
 
         <div id="adm-control-box" class="hidden space-y-6">
+            
+            <div class="bg-amber-50 p-3 rounded border border-amber-200 flex items-center justify-between">
+                <label for="adm-date-select" class="text-xs font-bold text-amber-800">🛠️ Gerenciar Qual Rodada?</label>
+                <select id="adm-date-select" class="text-xs font-bold p-1.5 rounded border bg-white text-black"></select>
+            </div>
+
             <div>
-                <h4 class="font-bold text-xs sm:text-sm text-gray-700 mb-2 border-b pb-1">⚽ Inserir Placares Reais de Hoje</h4>
+                <h4 class="font-bold text-xs sm:text-sm text-gray-700 mb-2 border-b pb-1">⚽ Inserir Placares Reais</h4>
                 <div id="adm-games-list" class="space-y-2 mb-3"></div>
                 <button id="adm-save-btn" class="w-full bg-green-600 text-white p-2 rounded font-bold text-xs hover:bg-green-700 transition">Salvar Placares Oficiais</button>
                 <p id="adm-save-status" class="text-center text-xs font-bold mt-1"></p>
@@ -79,10 +90,10 @@
             <div class="border-t pt-4">
                 <h4 class="font-bold text-xs sm:text-sm text-blue-800 mb-3 flex justify-between items-center">
                     <span>📊 Auditoria e Acertos dos Alunos</span>
-                    <button id="view-results-btn" class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded hover:bg-blue-200 transition font-bold">🔄 Atualizar Lista</button>
+                    <button id="view-results-btn" class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded hover:bg-blue-200 transition font-bold">🔄 Carregar / Atualizar</button>
                 </h4>
                 <div id="results-container" class="space-y-4 max-h-60 overflow-y-auto pr-1">
-                    <p class="text-xs text-gray-500 italic">Clique no botão acima para carregar a conferência dos alunos.</p>
+                    <p class="text-xs text-gray-500 italic">Clique no botão acima para carregar a conferência da rodada selecionada.</p>
                 </div>
             </div>
         </div>
