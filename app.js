@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🗓️ CALENDÁRIO DIÁRIO COMPLETO
+// 🗓️ CALENDÁRIO DIÁRIO OFICIAL
 const calendarioJogos = {
     "2026-06-29": [
         { id: "29_jogo1", mandante: "Brasil", flagM: "br", visitante: "Japão", flagV: "jp" },
@@ -22,9 +22,9 @@ const calendarioJogos = {
         { id: "29_jogo3", mandante: "Holanda", flagM: "nl", visitante: "Marrocos", flagV: "ma" }
     ],
     "2026-06-30": [
-        { id: "30_jogo1", mandante: "Costa do Marfim", flagM: "cm", visitante: "Noruega", flagV: "no" },
-        { id: "30_jogo2", mandante: "França", flagM: "fr", visitante: "Suécia, flagV: "su" },
-         { id: "30_jogo3", mandante: "México", flagM: "me", visitante: "Equador", flagV: "eq" }
+        { id: "30_jogo1", mandante: "Costa do Marfim", flagM: "ci", visitante: "Noruega", flagV: "no" },
+        { id: "30_jogo2", mandante: "França", flagM: "fr", visitante: "Suécia", flagV: "se" },
+        { id: "30_jogo3", mandante: "México", flagM: "mx", visitante: "Equador", flagV: "ec" }
     ]
 };
 
@@ -33,14 +33,18 @@ function obterDataHoje() {
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
 }
 const dataHoje = obterDataHoje();
-const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-30"]; 
 
-const SENHA_MESTRE = "C0p@2026"; // 🔐 SENHA DO PAINEL ADM
+function definirDataAtivaPadrao() {
+    if (calendarioJogos[dataHoje]) return dataHoje;
+    const datas = Object.keys(calendarioJogos).sort();
+    return datas.length > 0 ? datas[datas.length - 1] : dataHoje;
+}
+
+let dataSelecionadaUsuario = definirDataAtivaPadrao();
+let dataSelecionadaAdm = definirDataAtivaPadrao();
 let resultadosOficiais = {}; 
 let usuarioAtual = null;
 let currentFontSize = 16;
-
-const colecaoDoDia = `palpites_${dataHoje}`;
 
 const sections = {
     auth: document.getElementById('auth-section'),
@@ -48,7 +52,7 @@ const sections = {
     adm: document.getElementById('adm-section')
 };
 
-// Elementos comuns
+// Elementos Alunos
 const emailInput = document.getElementById('email-input');
 const loginBtn = document.getElementById('login-btn');
 const authError = document.getElementById('auth-error');
@@ -58,6 +62,7 @@ const gamesContainer = document.getElementById('games-container');
 const saveBtn = document.getElementById('save-palpites-btn');
 const saveStatus = document.getElementById('save-status');
 const totalCounter = document.getElementById('total-palpites-counter');
+const userDateSelect = document.getElementById('user-date-select');
 
 // Elementos ADM
 const btnAdmTrigger = document.getElementById('btn-adm-trigger');
@@ -72,8 +77,9 @@ const admSaveBtn = document.getElementById('adm-save-btn');
 const admSaveStatus = document.getElementById('adm-save-status');
 const viewResultsBtn = document.getElementById('view-results-btn');
 const resultsContainer = document.getElementById('results-container');
+const admDateSelect = document.getElementById('adm-date-select');
 
-// Áudios e Interface
+// Áudio e Estilos
 const bgMusic = document.getElementById('bg-music');
 const musicBtn = document.getElementById('music-btn');
 const volumeRange = document.getElementById('volume-range');
@@ -83,44 +89,158 @@ const mainBody = document.getElementById('main-body');
 
 bgMusic.volume = 0.5;
 
-// --- 🌐 INICIALIZADOR ---
-async function inicializarApp() {
-    try {
-        const querySnapshot = await getDocs(collection(db, colecaoDoDia));
-        totalCounter.innerText = querySnapshot.size;
+// --- 🌐 GERAR SELETORES DE DATAS COMPATÍVEIS ---
+function configurarSeletoresDeData() {
+    userDateSelect.innerHTML = '';
+    admDateSelect.innerHTML = '';
+    const datasOrdenadas = Object.keys(calendarioJogos).sort();
 
-        const resDoc = await getDoc(doc(db, "resultados_oficiais", dataHoje));
-        if (resDoc.exists()) {
-            resultadosOficiais = resDoc.data();
-        } else {
-            jogosDoDia.forEach(j => { resultadosOficiais[j.id] = { mandante: null, visitante: null }; });
-        }
+    datasOrdenadas.forEach(data => {
+        const [ano, mes, dia] = data.split('-');
+        const dataFormatada = `${dia}/${mes}/${ano}`;
+
+        const optUser = new Option(dataFormatada, data);
+        optUser.selected = (data === dataSelecionadaUsuario);
+        userDateSelect.appendChild(optUser);
+
+        const optAdm = new Option(dataFormatada, data);
+        optAdm.selected = (data === dataSelecionadaAdm);
+        admDateSelect.appendChild(optAdm);
+    });
+}
+configurarSeletoresDeData();
+
+async function atualizarContador(dataFoco) {
+    try {
+        const querySnapshot = await getDocs(collection(db, `palpites_${dataFoco}`));
+        totalCounter.innerText = querySnapshot.size;
     } catch (e) {
         totalCounter.innerText = "0";
     }
 }
-inicializarApp();
+atualizarContador(dataSelecionadaUsuario);
 
-// --- ⚙️ ACESSAR O PAINEL ADM (BOTÃO DA ENGRENAGEM) ---
+// --- 🎮 MOTOR DE RENDERING DO UTILIZADOR ---
+async function carregarRodadaUsuario() {
+    const colecaoFoco = `palpites_${dataSelecionadaUsuario}`;
+    atualizarContador(dataSelecionadaUsuario);
+    gamesContainer.innerHTML = '<p class="text-center text-xs text-gray-500 py-4">A buscar palpites arquivados...</p>';
+
+    try {
+        let resOficiaisFoco = {};
+        const resDoc = await getDoc(doc(db, "resultados_oficiais", dataSelecionadaUsuario));
+        if (resDoc.exists()) resOficiaisFoco = resDoc.data();
+
+        let palpiteExistente = null;
+        if (usuarioAtual) {
+            const docSnap = await getDoc(doc(db, colecaoFoco, usuarioAtual));
+            if (docSnap.exists()) palpiteExistente = docSnap.data();
+        }
+
+        renderizarJogosUsuario(palpiteExistente, resOficiaisFoco);
+    } catch (e) {
+        gamesContainer.innerHTML = '<p class="text-center text-xs text-red-500">Erro ao carregar rodada.</p>';
+    }
+}
+
+function renderizarJogosUsuario(palpites, oficiais) {
+    gamesContainer.innerHTML = '';
+    const jogosfoco = calendarioJogos[dataSelecionadaUsuario] || [];
+    const jaPalpitou = palpites !== null;
+
+    if (jogosfoco.length === 0) {
+        gamesContainer.innerHTML = '<p class="text-center text-xs text-gray-500 py-4">Nenhum jogo cadastrado.</p>';
+        saveBtn.classList.add('hidden');
+        saveStatus.innerText = "";
+        return;
+    }
+
+    jogosfoco.forEach(jogo => {
+        const palpiteM = jaPalpitou ? (palpites[jogo.id]?.mandante ?? '') : '';
+        const palpiteV = jaPalpitou ? (palpites[jogo.id]?.visitante ?? '') : '';
+        const realM = oficiais[jogo.id]?.mandante;
+        const realV = oficiais[jogo.id]?.visitante;
+
+        let statusJogoHtml = '';
+        if (realM !== null && realM !== undefined && realV !== null && realV !== undefined) {
+            const acertou = (palpiteM === realM && palpiteV === realV);
+            statusJogoHtml = `<div class="text-center text-[11px] mt-1 font-bold ${acertou ? 'text-green-600' : 'text-gray-500'}">Resultado Real: ${realM} x ${realV} ${acertou ? '🎉 (Acertou!)' : '❌'}</div>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = "bg-gray-50 p-3 rounded-lg border border-gray-200 shadow-sm flex flex-col";
+        card.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center justify-end space-x-2 w-1/3 text-right">
+                    <span class="font-bold text-gray-700 text-sm">${jogo.mandante}</span>
+                    <img src="https://flagcdn.com/w40/${jogo.flagM}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
+                </div>
+                <div class="flex items-center space-x-2 w-1/3 justify-center">
+                    <input type="number" min="0" id="${jogo.id}-m" value="${palpiteM}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-11 p-1 text-center border rounded font-bold text-base bg-white disabled:bg-gray-100">
+                    <span class="text-gray-400 font-bold text-sm">X</span>
+                    <input type="number" min="0" id="${jogo.id}-v" value="${palpiteV}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-11 p-1 text-center border rounded font-bold text-base bg-white disabled:bg-gray-100">
+                </div>
+                <div class="flex items-center justify-start space-x-2 w-1/3 text-left">
+                    <img src="https://flagcdn.com/w40/${jogo.flagV}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
+                    <span class="font-bold text-gray-700 text-sm">${jogo.visitante}</span>
+                </div>
+            </div>
+            ${statusJogoHtml}
+        `;
+        gamesContainer.appendChild(card);
+    });
+
+    document.querySelectorAll('.placar-input').forEach(input => input.addEventListener('input', tocarSomTecla));
+
+    if (jaPalpitou) {
+        saveBtn.classList.add('hidden');
+        saveStatus.innerText = "🔒 Palpite enviado e arquivado nesta rodada!";
+        saveStatus.className = "text-center mt-3 font-semibold text-amber-600 text-xs";
+    } else {
+        saveBtn.classList.remove('hidden');
+        saveStatus.innerText = "";
+    }
+}
+
+userDateSelect.addEventListener('change', (e) => {
+    dataSelecionadaUsuario = e.target.value;
+    carregarRodadaUsuario();
+});
+
+// --- ⚙️ CONTROLE DO PROFESSOR (MUDANÇA DE CAMPO ADM) ---
 btnAdmTrigger.addEventListener('click', () => {
-    // Esconde a tela de login e formulários
     Object.values(sections).forEach(s => s.classList.add('hidden'));
-    
-    // Mostra a seção do Administrador
     sections.adm.classList.remove('hidden');
-    
-    // Reseta as caixas internas para pedir a senha
     admPasswordInput.value = '';
     admAuthError.classList.add('hidden');
     admAuthBox.classList.remove('hidden');
     admControlBox.classList.add('hidden');
-    resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Clique no botão acima para carregar a conferência dos alunos.</p>';
+    resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Clique no botão abaixo para carregar a conferência da rodada selecionada.</p>';
+    configurarSeletoresDeData();
 });
 
-admLoginBtn.addEventListener('click', () => {
+admDateSelect.addEventListener('change', async (e) => {
+    dataSelecionadaAdm = e.target.value;
+    resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Rodada alterada no seletor. Clique em Carregar para auditar.</p>';
+    await carregarDadosOficiaisAdm();
+    renderizarPainelAdm();
+});
+
+async function carregarDadosOficiaisAdm() {
+    const resDoc = await getDoc(doc(db, "resultados_oficiais", dataSelecionadaAdm));
+    if (resDoc.exists()) {
+        resultadosOficiais = resDoc.data();
+    } else {
+        resultadosOficiais = {};
+        (calendarioJogos[dataSelecionadaAdm] || []).forEach(j => { resultadosOficiais[j.id] = { mandante: null, visitante: null }; });
+    }
+}
+
+admLoginBtn.addEventListener('click', async () => {
     if (admPasswordInput.value.trim() === SENHA_MESTRE) {
         admAuthBox.classList.add('hidden');
         admControlBox.classList.remove('hidden');
+        await carregarDadosOficiaisAdm();
         renderizarPainelAdm();
     } else {
         admAuthError.classList.remove('hidden');
@@ -129,7 +249,14 @@ admLoginBtn.addEventListener('click', () => {
 
 function renderizarPainelAdm() {
     admGamesList.innerHTML = '';
-    jogosDoDia.forEach(jogo => {
+    const jogosFocoAdm = calendarioJogos[dataSelecionadaAdm] || [];
+
+    if (jogosFocoAdm.length === 0) {
+        admGamesList.innerHTML = '<p class="text-xs text-gray-500 italic text-center">Nenhum jogo nesta data.</p>';
+        return;
+    }
+
+    jogosFocoAdm.forEach(jogo => {
         const mVal = resultadosOficiais[jogo.id]?.mandante ?? '';
         const vVal = resultadosOficiais[jogo.id]?.visitante ?? '';
         
@@ -150,7 +277,9 @@ function renderizarPainelAdm() {
 
 admSaveBtn.addEventListener('click', async () => {
     const novosResultados = {};
-    jogosDoDia.forEach(jogo => {
+    const jogosFocoAdm = calendarioJogos[dataSelecionadaAdm] || [];
+
+    jogosFocoAdm.forEach(jogo => {
         const mVal = document.getElementById(`adm-${jogo.id}-m`).value;
         const vVal = document.getElementById(`adm-${jogo.id}-v`).value;
         novosResultados[jogo.id] = {
@@ -160,30 +289,32 @@ admSaveBtn.addEventListener('click', async () => {
     });
 
     try {
-        await setDoc(doc(db, "resultados_oficiais", dataHoje), novosResultados);
+        await setDoc(doc(db, "resultados_oficiais", dataSelecionadaAdm), novosResultados);
         resultadosOficiais = novosResultados;
-        admSaveStatus.innerText = "✅ Placares salvos com sucesso!";
+        admSaveStatus.innerText = "✅ Salvo com sucesso!";
         admSaveStatus.className = "text-center text-xs font-bold mt-1 text-green-600";
     } catch (e) {
-        admSaveStatus.innerText = "❌ Erro ao salvar dados.";
+        admSaveStatus.innerText = "❌ Erro ao salvar.";
         admSaveStatus.className = "text-center text-xs font-bold mt-1 text-red-600";
     }
 });
 
-// --- 📊 CARREGAR ACERTOS E DESTAQUES ---
+// --- 📊 EXCLUSIVO ADM: HISTÓRICO E GABARITO DA TURMA ---
 viewResultsBtn.addEventListener('click', async () => {
-    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-2 text-xs">Carregando acertos...</p>';
+    resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-2 text-xs">A processar acertos...</p>';
+    const colecaoAdmFoco = `palpites_${dataSelecionadaAdm}`;
+    const jogosFocoAdm = calendarioJogos[dataSelecionadaAdm] || [];
 
     try {
-        const querySnapshot = await getDocs(collection(db, colecaoDoDia));
+        const querySnapshot = await getDocs(collection(db, colecaoAdmFoco));
         resultsContainer.innerHTML = '';
 
         if (querySnapshot.empty) {
-            resultsContainer.innerHTML = '<p class="text-center text-gray-600 py-2 text-xs">Nenhum palpite enviado hoje.</p>';
+            resultsContainer.innerHTML = '<p class="text-center text-gray-600 py-2 text-xs">Nenhum palpite nesta rodada.</p>';
             return;
         }
 
-        const totalJogosRodada = jogosDoDia.length;
+        const totalJogosRodada = jogosFocoAdm.length;
         let alunosGabaritaram = [];
         let listaCardsAlunos = [];
 
@@ -193,7 +324,7 @@ viewResultsBtn.addEventListener('click', async () => {
             let acertosContador = 0;
             let detalheLinhas = '';
 
-            jogosDoDia.forEach(jogo => {
+            jogosFocoAdm.forEach(jogo => {
                 const palpiteM = dadosAlun[jogo.id]?.mandante;
                 const palpiteV = dadosAlun[jogo.id]?.visitante;
                 const realM = resultadosOficiais[jogo.id]?.mandante;
@@ -249,7 +380,7 @@ viewResultsBtn.addEventListener('click', async () => {
         listaCardsAlunos.forEach(cardHtml => resultsContainer.appendChild(cardHtml));
 
     } catch (error) {
-        resultsContainer.innerHTML = '<p class="text-center text-red-600 text-xs">Erro ao processar ranking.</p>';
+        resultsContainer.innerHTML = '<p class="text-center text-red-600 text-xs">Erro ao processar auditoria.</p>';
     }
 });
 
@@ -259,7 +390,7 @@ backAdmBtn.addEventListener('click', () => {
     inicializarApp();
 });
 
-// --- CONTROLES DE ÁUDIO E INTERFACE ---
+// --- MÓDULOS PERIFÉRICOS ---
 musicBtn.addEventListener('click', () => {
     if (bgMusic.paused) { bgMusic.play(); atualizarBotaoMusica(false); }
     else { bgMusic.pause(); atualizarBotaoMusica(true); }
@@ -274,7 +405,7 @@ function tocarSomTecla() { soundClick.currentTime = 0; soundClick.volume = 0.4; 
 document.getElementById('btn-font-inc').addEventListener('click', () => { if (currentFontSize < 24) { currentFontSize += 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
 document.getElementById('btn-font-dec').addEventListener('click', () => { if (currentFontSize > 12) { currentFontSize -= 2; mainBody.style.fontSize = currentFontSize + 'px'; } });
 
-// --- LOGIN DOS ALUNOS ---
+// --- LOGIN INTEGRADOR ---
 loginBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim().toLowerCase();
     
@@ -284,70 +415,31 @@ loginBtn.addEventListener('click', async () => {
         return;
     }
 
-    const usuarioId = email.replace(/[^a-zA-Z0-9]/g, "_");
+    usuarioAtual = email.replace(/[^a-zA-Z0-9]/g, "_");
     authError.classList.add('hidden');
     try {
         bgMusic.play().then(() => atualizarBotaoMusica(false)).catch(e => {});
-        const docRef = doc(db, colecaoDoDia, usuarioId);
-        const docSnap = await getDoc(docRef);
-        usuarioAtual = usuarioId;
         sections.auth.classList.add('hidden');
         sections.app.classList.remove('hidden');
         userDisplay.innerText = `Estudante: ${email}`;
-        renderizarJogos(docSnap.exists() ? docSnap.data() : null);
+        
+        configurarSeletoresDeData();
+        await carregarRodadaUsuario();
     } catch (error) {
-        authError.innerText = "Erro de conexão com o banco.";
+        authError.innerText = "Erro ao conectar com o Firebase.";
         authError.classList.remove('hidden');
     }
 });
 
-function renderizarJogos(palpitesExistentes) {
-    gamesContainer.innerHTML = '';
-    const jaPalpitou = palpitesExistentes !== null;
-
-    jogosDoDia.forEach(jogo => {
-        const palpiteM = jaPalpitou ? (palpitesExistentes[jogo.id]?.mandante ?? '') : '';
-        const palpiteV = jaPalpitou ? (palpitesExistentes[jogo.id]?.visitante ?? '') : '';
-
-        const card = document.createElement('div');
-        card.className = "flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm";
-        card.innerHTML = `
-            <div class="flex items-center justify-end space-x-2 w-1/3 text-right">
-                <span class="font-bold text-gray-700">${jogo.mandante}</span>
-                <img src="https://flagcdn.com/w40/${jogo.flagM}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
-            </div>
-            <div class="flex items-center space-x-2 w-1/3 justify-center">
-                <input type="number" min="0" id="${jogo.id}-m" value="${palpiteM}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
-                <span class="text-gray-400 font-bold">X</span>
-                <input type="number" min="0" id="${jogo.id}-v" value="${palpiteV}" ${jaPalpitou ? 'disabled' : ''} class="placar-input w-12 p-1.5 text-center border rounded font-bold text-lg bg-white disabled:bg-gray-100">
-            </div>
-            <div class="flex items-center justify-start space-x-2 w-1/3 text-left">
-                <img src="https://flagcdn.com/w40/${jogo.flagV}.png" class="w-7 h-5 object-cover rounded shadow-sm border border-gray-200">
-                <span class="font-bold text-gray-700">${jogo.visitante}</span>
-            </div>
-        `;
-        gamesContainer.appendChild(card);
-    });
-
-    document.querySelectorAll('.placar-input').forEach(input => input.addEventListener('input', tocarSomTecla));
-
-    if (jaPalpitou) {
-        saveBtn.classList.add('hidden');
-        saveStatus.innerText = "🔒 Palpite único enviado para a rodada de hoje!";
-        saveStatus.className = "text-center mt-3 font-semibold text-amber-600";
-    } else {
-        saveBtn.classList.remove('hidden');
-        saveStatus.innerText = "";
-    }
-}
-
 saveBtn.addEventListener('click', async () => {
     if (!usuarioAtual) return;
-    const docRef = doc(db, colecaoDoDia, usuarioAtual);
+    const colecaoFoco = `palpites_${dataSelecionadaUsuario}`;
+    const docRef = doc(db, colecaoFoco, usuarioAtual);
     const palpitesParaSalvar = {};
     let preencheuTudo = true;
+    const jogosFoco = calendarioJogos[dataSelecionadaUsuario] || [];
 
-    jogosDoDia.forEach(jogo => {
+    jogosFoco.forEach(jogo => {
         const mVal = document.getElementById(`${jogo.id}-m`).value;
         const vVal = document.getElementById(`${jogo.id}-v`).value;
         if (mVal === "" || vVal === "") preencheuTudo = false;
@@ -356,14 +448,14 @@ saveBtn.addEventListener('click', async () => {
 
     if (!preencheuTudo) {
         saveStatus.innerText = "⚠️ Preencha todos os placares.";
-        saveStatus.className = "text-center mt-3 font-semibold text-red-600";
+        saveStatus.className = "text-center mt-3 font-semibold text-red-600 text-xs";
         return;
     }
 
     try {
         await setDoc(docRef, palpitesParaSalvar);
         soundSuccess.volume = 0.6; soundSuccess.play().catch(e => {});
-        renderizarJogos(palpitesParaSalvar);
+        await carregarRodadaUsuario();
     } catch (e) {
         saveStatus.innerText = "Erro ao salvar palpite.";
     }
@@ -375,3 +467,6 @@ logoutBtn.addEventListener('click', () => {
     sections.auth.classList.remove('hidden');
     inicializarApp();
 });
+
+async function inicializarApp() { await atualizarContador(definirDataAtivaPadrao()); }
+inicializarApp();
