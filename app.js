@@ -145,17 +145,17 @@ async function carregarRodadaUsuario() {
 
 function renderizarJogosUsuario(palpites, oficiais) {
     gamesContainer.innerHTML = '';
-    const jogosfoco = calendarioJogos[dataSelecionadaUsuario] || [];
+    const jogosFoco = calendarioJogos[dataSelecionadaUsuario] || [];
     const jaPalpitou = palpites !== null;
 
-    if (jogosfoco.length === 0) {
+    if (jogosFoco.length === 0) {
         gamesContainer.innerHTML = '<p class="text-center text-xs text-gray-500 py-4">Nenhum jogo cadastrado.</p>';
         saveBtn.classList.add('hidden');
         saveStatus.innerText = "";
         return;
     }
 
-    jogosfoco.forEach(jogo => {
+    jogosFoco.forEach(jogo => {
         const palpiteM = jaPalpitou ? (palpites[jogo.id]?.mandante ?? '') : '';
         const palpiteV = jaPalpitou ? (palpites[jogo.id]?.visitante ?? '') : '';
         const realM = oficiais[jogo.id]?.mandante;
@@ -215,7 +215,7 @@ btnAdmTrigger.addEventListener('click', () => {
     admAuthError.classList.add('hidden');
     admAuthBox.classList.remove('hidden');
     admControlBox.classList.add('hidden');
-    resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Clique no botão abaixo para carregar a conferência da rodada selecionada.</p>';
+    resultsContainer.innerHTML = '<p class="text-xs text-gray-500 italic">Clique no botão acima para carregar a conferência da rodada selecionada.</p>';
     configurarSeletoresDeData();
 });
 
