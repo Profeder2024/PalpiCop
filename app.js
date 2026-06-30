@@ -22,8 +22,9 @@ const calendarioJogos = {
         { id: "29_jogo3", mandante: "Holanda", flagM: "nl", visitante: "Marrocos", flagV: "ma" }
     ],
     "2026-06-30": [
-        { id: "30_jogo1", mandante: "Argentina", flagM: "ar", visitante: "França", flagV: "fr" },
-        { id: "30_jogo2", mandante: "Espanha", flagM: "es", visitante: "Nigéria", flagV: "ng" }
+        { id: "30_jogo1", mandante: "Costa do Marfim", flagM: "cm", visitante: "Noruega", flagV: "no" },
+        { id: "30_jogo2", mandante: "França", flagM: "fr", visitante: "Suécia, flagV: "su" },
+         { id: "30_jogo3", mandante: "México", flagM: "me", visitante: "Equador", flagV: "eq" }
     ]
 };
 
@@ -32,7 +33,7 @@ function obterDataHoje() {
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
 }
 const dataHoje = obterDataHoje();
-const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-29"]; 
+const jogosDoDia = calendarioJogos[dataHoje] || calendarioJogos["2026-06-30"]; 
 
 const SENHA_MESTRE = "C0p@2026"; // 🔐 SENHA DO PAINEL ADM
 let resultadosOficiais = {}; 
