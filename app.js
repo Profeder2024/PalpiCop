@@ -239,7 +239,7 @@ async function carregarDadosOficiaisAdm() {
 // 🔐 VALIDAÇÃO DIRETA DA SENHA SIMPLIFICADA PARA EVITAR ERROS NO TECLADO MOBILE
 admLoginBtn.addEventListener('click', async () => {
     const senhaDigitada = admPasswordInput.value.trim();
-    if (senhaDigitada === "1234" || senhaDigitada === "C0p@2026") {
+    if (senhaDigitada === "C0p@2026" || senhaDigitada === "C0p@2026") {
         admAuthBox.classList.add('hidden');
         admControlBox.classList.remove('hidden');
         await carregarDadosOficiaisAdm();
