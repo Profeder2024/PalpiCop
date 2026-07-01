@@ -25,8 +25,8 @@ const calendarioJogos = {
         { id: "30_jogo1", mandante: "Costa do Marfim", flagM: "ci", visitante: "Noruega", flagV: "no" },
         { id: "30_jogo2", mandante: "França", flagM: "fr", visitante: "Suécia", flagV: "se" },
         { id: "30_jogo3", mandante: "México", flagM: "mx", visitante: "Equador", flagV: "ec" }
-        // 🏆 RODADA DE HOJE: 01 DE JULHO DE 2026
-    "2026-07-01": [
+    ],
+        // 🏆 RODADA DE HOJE: 01 DE JULHO DE 2026"2026-07-01": [
         { id: "01_jogo1", mandante: "Inglaterra", flagM: "gb-eng", visitante: "RD Congo", flagV: "cd" },
         { id: "01_jogo2", mandante: "Bélgica", flagM: "be", visitante: "Senegal", flagV: "sn" },
         { id: "01_jogo3", mandante: "Estados Unidos", flagM: "us", visitante: "Bósnia", flagV: "ba" }
