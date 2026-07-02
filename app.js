@@ -34,6 +34,12 @@ const calendarioJogos = {
     "2026-07-02": [
         { id: "02_jogo1", mandante: "Espanha", flagM: "es", visitante: "Áustria", flagV: "at" },
         { id: "02_jogo2", mandante: "Portugal", flagM: "pt", visitante: "Croácia", flagV: "hr" }
+    ],
+    "2026-07-03": [
+        { id: "03_jogo1", mandante: "Suíça", flagM: "ch", visitante: "Argélia", flagV: "dz" },
+        { id: "03_jogo2", mandante: "Austrália", flagM: "au", visitante: "Egito", flagV: "eg" },
+        { id: "03_jogo3", mandante: "Argentina", flagM: "ar", visitante: "Cabo Verde", flagV: "cv" },
+        { id: "03_jogo4", mandante: "Colômbia", flagM: "co", visitante: "Gana", flagV: "gh" }
     ]
 };
 
