@@ -40,6 +40,10 @@ const calendarioJogos = {
         { id: "03_jogo2", mandante: "Austrália", flagM: "au", visitante: "Egito", flagV: "eg" },
         { id: "03_jogo3", mandante: "Argentina", flagM: "ar", visitante: "Cabo Verde", flagV: "cv" },
         { id: "03_jogo4", mandante: "Colômbia", flagM: "co", visitante: "Gana", flagV: "gh" }
+    ]],
+    "2026-07-04": [
+        { id: "04_jogo1", mandante: "Canadá", flagM: "ca", visitante: "Marrocos", flagV: "ma" },
+        { id: "04_jogo2", mandante: "Paraguai", flagM: "py", visitante: "França", flagV: "fr" }
     ]
 };
 
