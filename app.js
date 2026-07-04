@@ -40,10 +40,25 @@ const calendarioJogos = {
         { id: "03_jogo2", mandante: "Austrália", flagM: "au", visitante: "Egito", flagV: "eg" },
         { id: "03_jogo3", mandante: "Argentina", flagM: "ar", visitante: "Cabo Verde", flagV: "cv" },
         { id: "03_jogo4", mandante: "Colômbia", flagM: "co", visitante: "Gana", flagV: "gh" }
-    ]],
+    ],
     "2026-07-04": [
         { id: "04_jogo1", mandante: "Canadá", flagM: "ca", visitante: "Marrocos", flagV: "ma" },
         { id: "04_jogo2", mandante: "Paraguai", flagM: "py", visitante: "França", flagV: "fr" }
+    ],
+    // 📅 DOMINGO - 05/07 (AMANHÃ)
+    "2026-07-05": [
+        { id: "05_jogo1", mandante: "Brasil", flagM: "br", visitante: "Noruega", flagV: "no" },
+        { id: "05_jogo2", mandante: "México", flagM: "mx", visitante: "Inglaterra", flagV: "gb-eng" }
+    ],
+    // 📅 SEGUNDA-FEIRA - 06/07
+    "2026-07-06": [
+        { id: "06_jogo1", mandante: "Portugal", flagM: "pt", visitante: "Espanha", flagV: "es" },
+        { id: "06_jogo2", mandante: "Estados Unidos", flagM: "us", visitante: "Bélgica", flagV: "be" }
+    ],
+    // 📅 TERÇA-FEIRA - 07/07
+    "2026-07-07": [
+        { id: "07_jogo1", mandante: "Argentina", flagM: "ar", visitante: "Egito", flagV: "eg" },
+        { id: "07_jogo2", flagM: "ch", mandante: "Suíça", visitante: "Colômbia", flagV: "co" }
     ]
 };
 
