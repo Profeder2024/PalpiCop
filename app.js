@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🗓️ CALENDÁRIO DIÁRIO OFICIAL
+// 🗓️ CALENDÁRIO DIÁRIO OFICIAL COMPLETO (ATUALIZADO COM QUARTAS DE FINAL)
 const calendarioJogos = {
     "2026-06-29": [
         { id: "29_jogo1", mandante: "Brasil", flagM: "br", visitante: "Japão", flagV: "jp" },
@@ -45,21 +45,29 @@ const calendarioJogos = {
         { id: "04_jogo1", mandante: "Canadá", flagM: "ca", visitante: "Marrocos", flagV: "ma" },
         { id: "04_jogo2", mandante: "Paraguai", flagM: "py", visitante: "França", flagV: "fr" }
     ],
-    // 📅 DOMINGO - 05/07 (AMANHÃ)
     "2026-07-05": [
         { id: "05_jogo1", mandante: "Brasil", flagM: "br", visitante: "Noruega", flagV: "no" },
         { id: "05_jogo2", mandante: "México", flagM: "mx", visitante: "Inglaterra", flagV: "gb-eng" }
     ],
-    // 📅 SEGUNDA-FEIRA - 06/07
     "2026-07-06": [
         { id: "06_jogo1", mandante: "Portugal", flagM: "pt", visitante: "Espanha", flagV: "es" },
         { id: "06_jogo2", mandante: "Estados Unidos", flagM: "us", visitante: "Bélgica", flagV: "be" }
     ],
-    // 📅 TERÇA-FEIRA - 07/07
     "2026-07-07": [
         { id: "07_jogo1", mandante: "Argentina", flagM: "ar", visitante: "Egito", flagV: "eg" },
-        { id: "07_jogo2", flagM: "ch", mandante: "Suíça", visitante: "Colômbia", flagV: "co" }
+        { id: "07_jogo2", mandante: "Suíça", flagM: "ch", visitante: "Colômbia", flagV: "co" }
+    ],
+    // 🏆 QUARTAS DE FINAL - QUINTA-FEIRA (09/07)
+    "2026-07-09": [
+        { id: "09_jogo1", mandante: "Marrocos", flagM: "ma", visitante: "França", flagV: "fr" },
+        { id: "09_jogo2", mandante: "Brasil", flagM: "br", visitante: "Inglaterra", flagV: "gb-eng" }
+    ],
+    // 🏆 QUARTAS DE FINAL - SEXTA-FEIRA (10/07)
+    "2026-07-10": [
+        { id: "10_jogo1", mandante: "Portugal", flagM: "pt", visitante: "Estados Unidos", flagV: "us" },
+        { id: "10_jogo2", mandante: "Argentina", flagM: "ar", visitante: "Suíça", flagV: "ch" }
     ]
+};
 };
 
 function obterDataHoje() {
