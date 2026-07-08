@@ -57,15 +57,18 @@ const calendarioJogos = {
         { id: "07_jogo1", mandante: "Argentina", flagM: "ar", visitante: "Egito", flagV: "eg" },
         { id: "07_jogo2", mandante: "Suíça", flagM: "ch", visitante: "Colômbia", flagV: "co" }
     ],
-    // 🏆 QUARTAS DE FINAL - QUINTA-FEIRA (09/07)
+    FINAL - QUINTA-FEIRA (09/07)
     "2026-07-09": [
-        { id: "09_jogo1", mandante: "Marrocos", flagM: "ma", visitante: "França", flagV: "fr" },
-        { id: "09_jogo2", mandante: "Brasil", flagM: "br", visitante: "Inglaterra", flagV: "gb-eng" }
+        { id: "09_jogo1", mandante: "França", flagM: "fr", visitante: "Marrocos", flagV: "ma" }
     ],
     // 🏆 QUARTAS DE FINAL - SEXTA-FEIRA (10/07)
     "2026-07-10": [
-        { id: "10_jogo1", mandante: "Portugal", flagM: "pt", visitante: "Estados Unidos", flagV: "us" },
-        { id: "10_jogo2", mandante: "Argentina", flagM: "ar", visitante: "Suíça", flagV: "ch" }
+        { id: "10_jogo1", mandante: "Espanha", flagM: "es", visitante: "Bélgica", flagV: "be" }
+    ],
+    // 🏆 QUARTAS DE FINAL - SÁBADO (11/07)
+    "2026-07-11": [
+        { id: "11_jogo1", mandante: "Noruega", flagM: "no", visitante: "Inglaterra", flagV: "gb-eng" },
+        { id: "11_jogo2", mandante: "Argentina", flagM: "ar", visitante: "Suíça", flagV: "ch" }
     ]
 };
 
