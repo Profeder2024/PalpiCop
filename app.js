@@ -68,7 +68,6 @@ const calendarioJogos = {
         { id: "10_jogo2", mandante: "Argentina", flagM: "ar", visitante: "Suíça", flagV: "ch" }
     ]
 };
-};
 
 function obterDataHoje() {
     const hoje = new Date();
