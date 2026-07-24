@@ -14,7 +14,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🗓️ CALENDÁRIO DIÁRIO OFICIAL COMPLETO (ATUALIZADO COM QUARTAS DE FINAL)
+
+// 🗓️ CALENDÁRIO DIÁRIO OFICIAL COMPLETO (ATUALIZADO ATÉ A FINAL)
 const calendarioJogos = {
     "2026-06-29": [
         { id: "29_jogo1", mandante: "Brasil", flagM: "br", visitante: "Japão", flagV: "jp" },
@@ -57,18 +58,31 @@ const calendarioJogos = {
         { id: "07_jogo1", mandante: "Argentina", flagM: "ar", visitante: "Egito", flagV: "eg" },
         { id: "07_jogo2", mandante: "Suíça", flagM: "ch", visitante: "Colômbia", flagV: "co" }
     ],
-    FINAL - QUINTA-FEIRA (09/07)
     "2026-07-09": [
         { id: "09_jogo1", mandante: "França", flagM: "fr", visitante: "Marrocos", flagV: "ma" }
     ],
-    // 🏆 QUARTAS DE FINAL - SEXTA-FEIRA (10/07)
+    // 🏆 QUARTAS DE FINAL
     "2026-07-10": [
         { id: "10_jogo1", mandante: "Espanha", flagM: "es", visitante: "Bélgica", flagV: "be" }
     ],
-    // 🏆 QUARTAS DE FINAL - SÁBADO (11/07)
     "2026-07-11": [
         { id: "11_jogo1", mandante: "Noruega", flagM: "no", visitante: "Inglaterra", flagV: "gb-eng" },
         { id: "11_jogo2", mandante: "Argentina", flagM: "ar", visitante: "Suíça", flagV: "ch" }
+    ],
+    // 🔥 SEMIFINAIS
+    "2026-07-14": [
+        { id: "14_jogo1", mandante: "França", flagM: "fr", placarM: 0, visitante: "Espanha", flagV: "es", placarV: 2, status: "FIM" }
+    ],
+    "2026-07-15": [
+        { id: "15_jogo1", mandante: "Inglaterra", flagM: "gb-eng", placarM: 1, visitante: "Argentina", flagV: "ar", placarV: 2, status: "FIM" }
+    ],
+    // 🥉 DISPUTA PELO TERCEIRO LUGAR
+    "2026-07-18": [
+        { id: "18_jogo1", mandante: "França", flagM: "fr", placarM: 4, visitante: "Inglaterra", flagV: "gb-eng", placarV: 6, status: "FIM" }
+    ],
+    // 👑 FINAL
+    "2026-07-19": [
+        { id: "19_jogo1", mandante: "Espanha", flagM: "es", placarM: 1, visitante: "Argentina", flagV: "ar", placarV: 0, status: "FIM" }
     ]
 };
 
